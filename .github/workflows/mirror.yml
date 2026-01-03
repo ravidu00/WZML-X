@@ -1,0 +1,29 @@
+name: Mirror-Leech Workflow
+
+on:
+  workflow_dispatch: # ඔබට අතින් (Manually) පණගැන්වීමට
+  repository_dispatch:
+    types: [new_torrent] # Firestore එකෙන් Trigger කිරීමට
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+
+      - name: Run Mirror Bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_API: ${{ secrets.TELEGRAM_API }}
+          TELEGRAM_HASH: ${{ secrets.TELEGRAM_HASH }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
+          GDRIVE_ID: ${{ secrets.GDRIVE_ID }}
+        run: |
+          docker build -t mirror-bot .
+          docker run mirror-bot
