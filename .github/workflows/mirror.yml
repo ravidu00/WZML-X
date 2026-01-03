@@ -1,29 +1,38 @@
-name: Mirror-Leech Workflow
+name: WZML-X Mirror Leech
 
 on:
-  workflow_dispatch: # ඔබට අතින් (Manually) පණගැන්වීමට
   repository_dispatch:
-    types: [new_torrent] # Firestore එකෙන් Trigger කිරීමට
+    types: [new_torrent] # Firebase එකෙන් Trigger වීමට අවශ්‍ය Event එක
+  workflow_dispatch: # ඔබට අවශ්‍ය වෙලාවක අතින් (Manually) Run කිරීමට
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Docker
+      - name: Setup Docker
         run: |
           sudo apt-get update
           sudo apt-get install -y docker.io
 
-      - name: Run Mirror Bot
+      - name: Build and Run WZML-X
         env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          # GitHub Secrets වලින් දත්ත ලබා ගැනීම
           TELEGRAM_API: ${{ secrets.TELEGRAM_API }}
           TELEGRAM_HASH: ${{ secrets.TELEGRAM_HASH }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           OWNER_ID: ${{ secrets.OWNER_ID }}
           GDRIVE_ID: ${{ secrets.GDRIVE_ID }}
+          AUTHORIZED_CHATS: ${{ secrets.AUTHORIZED_CHATS }}
+          # Firebase එකෙන් එන Link එක
+          MIRROR_LINK: ${{ github.event.client_payload.link }}
         run: |
-          docker build -t mirror-bot .
-          docker run mirror-bot
+          # Docker Image එක Build කිරීම
+          docker build . -t wzml-bot
+          
+          # Bot එක පණගන්වා ලින්ක් එක Mirror කිරීමට නියෝග කිරීම
+          # සටහන: මෙහි cmd එක Repo එකේ script එක අනුව වෙනස් විය හැක
+          docker run wzml-bot python3 -m bot --mirror "${MIRROR_LINK}"
